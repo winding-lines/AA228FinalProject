@@ -198,6 +198,14 @@ function get_goal_xy(m::RoombaModel)
     end
 end
 
+function get_stairs(m:: RoombaModel)
+    srn = mdp(m).room.stair_rect
+    swn = mdp(m).room.stair_wall
+    sr = mdp(m).room.rectangles[swn]
+    corners = sr.corners
+    @show corners
+end
+
 # initializes x,y,th of Roomba in the room
 function POMDPs.initialstate(m::RoombaModel, rng::AbstractRNG)
     e = mdp(m)

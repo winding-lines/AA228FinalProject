@@ -30,6 +30,7 @@ export
     LidarResampler,
     RoombaParticleFilter,
     get_goal_xy,
+    get_stairs,
     wrap_to_pi,
     ContinuousRoombaStateSpace,
     DiscreteRoombaStateSpace,
