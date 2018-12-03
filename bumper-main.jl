@@ -10,12 +10,8 @@ using POMDPSimulators
 using Cairo
 using Random
 using Printf
+include("output.jl")
 
-# Define the policy to test
-mutable struct ToEnd <: Policy
-    ts::Int64 # to track the current time-step.
-    searching::Bool
-end
 
 
 function init()
@@ -97,51 +93,6 @@ function POMDPs.action(p::ToEnd, b::ParticleCollection{RoombaState})
     return RoombaAct(v, om)
 end
 
-function generate_output(pomdp, belief_updater)
-    @printf("Entering\n")
-    Random.seed!(2)
-
-    # reset the policy
-    p = ToEnd(0, true) # here, the argument sets the time-steps elapsed to 0
-
-    # run the simulation
-
-    #=
-    c = @GtkCanvas()
-    win = GtkWindow(c, "Roomba Environment", 600, 600)
-    =#
-
-    c = CairoRGBSurface(700, 500);
-    cr = CairoContext(c);
-
-    rm("output/bumper"; force = true, recursive=true)
-    rm("out.gif"; force=true)
-    mkdir("output/bumper")
-    args = ["-loop", "0", "-delay", "10"]
-
-    for (t, step) in enumerate(stepthrough(pomdp, p, belief_updater, max_steps=400))
-        # @printf("timestep %d\n", t)
-        # the following lines render the room, the particles, and the roomba
-        set_source_rgb(cr,1,1,1)
-        paint(cr)
-        render(cr, pomdp, step)
-
-        # render some information that can help with debugging
-        # here, we render the time-step, the state, and the observation
-        move_to(cr,300,400)
-        show_text(cr, @sprintf("t=%d, state=%s",t, string(step.s) ))
-        name = @sprintf("output/bumper/out-%03d.png", t)
-        push!(args, name)
-        if t % 50 == 0
-            @printf(" %d ", t)
-        end
-        write_to_png(c,name);
-    end
-    println("assembling output gif")
-    push!(args, "out.gif")
-    Base.run(`convert $args`)
-    "out.gif"
-end
 
 using Statistics
 
@@ -166,7 +117,11 @@ end
 
 function run()
     init()
-    generate_output(pomdp, belief_updater)
+
+    # reset the policy
+    p = ToEnd(0, true) # here, the argument sets the time-steps elapsed to 0
+
+    generate_output(pomdp, p, belief_updater, "bumper")
 end
 
 @printf("\nMain exiting successfully, you may want to execute `run()`\n")

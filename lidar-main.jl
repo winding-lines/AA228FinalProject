@@ -7,14 +7,10 @@ using POMDPPolicies
 using BeliefUpdaters
 using ParticleFilters
 using POMDPSimulators
-using Cairo
 using Random
 using Printf
+include("output.jl")
 
-# Define the policy to test
-mutable struct ToEnd <: Policy
-    ts::Int64 # to track the current time-step.
-end
 
 
 function init()
@@ -79,33 +75,6 @@ function POMDPs.action(p::ToEnd, b::ParticleCollection{RoombaState})
     return RoombaAct(v, om)
 end
 
-function generate_output(pomdp, belief_updater)
-    @printf("Entering\n")
-    Random.seed!(2)
-
-    # reset the policy
-    p = ToEnd(0) # here, the argument sets the time-steps elapsed to 0
-
-    # run the simulation
-
-    c = CairoRGBSurface(700, 500);
-    cr = CairoContext(c);
-
-    for (t, step) in enumerate(stepthrough(pomdp, p, belief_updater, max_steps=100))
-        # @printf("timestep %d\n", t)
-        # the following lines render the room, the particles, and the roomba
-        set_source_rgb(cr,1,1,1)
-        paint(cr)
-        render(cr, pomdp, step)
-
-        # render some information that can help with debugging
-        # here, we render the time-step, the state, and the observation
-        move_to(cr,300,400)
-        show_text(cr, @sprintf("t=%d, state=%s, o=%.3f",t,string(step.s),step.o))
-        write_to_png(c,@sprintf("output/lidar/main-%02d.png", t));
-        sleep(0.1) # to slow down the simulation
-    end
-end
 
 using Statistics
 
@@ -130,7 +99,9 @@ end
 
 function run()
     init()
-    generate_output(pomdp, belief_updater)
+    # reset the policy
+    p = ToEnd(0, true) # here, the argument sets the time-steps elapsed to 0
+    generate_output(pomdp, p, belief_updater, "lidar")
 end
 
 @printf("\nMain exiting successfully, you may want to execute `run()`\n")

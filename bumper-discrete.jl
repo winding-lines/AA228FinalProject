@@ -50,6 +50,12 @@ function compare(pomdp, real_policy)
     @show history_real, history_rand
 end
 
+function POMDPs.pdf(d::AA228FinalProject.RoombaInitialDistribution, s::RoombaState)
+    # @printf("pdf(%s)\n", s)
+    error("not implemented")
+    0.0
+end
+
 function run() 
     pomdp = init()
     println("solving")
