@@ -47,14 +47,16 @@ function do_solve(pomdp)
     policy
 end
 
-function compare(label::String, pomdp::RoombaPOMDP, real_policy)
+function compare(label::String, pomdp::RoombaPOMDP, real_policy, skip::Int)
     nx = 15
     ny = 10
     nth = 4
     states = evaluation_states(pomdp, nx, ny, nth)
     folder = "compare-$(nx)-$(ny)-$(nth)"
-    rm("output/$(folder)"; force = true, recursive = true)
-    mkdir("output/$(folder)")
+    # rm("output/$(folder)"; force = true, recursive = true)
+    if !isdir("output/$(folder)")
+        mkdir("output/$(folder)")
+    end
     label = "$(folder)/$(label)"
     room = mdp(pomdp).room
 
@@ -66,33 +68,43 @@ function compare(label::String, pomdp::RoombaPOMDP, real_policy)
 
     # compute the history for all the states
     for (i,is) in enumerate(states)
+        if i<=skip
+            continue
+        end
         belief_updater = init_belief_updater(pomdp)
         hr = HistoryRecorder(max_steps=400)
         dist = initialstate_distribution(pomdp)
         ib = initialize_belief(belief_updater, dist)
-        hist = simulate(hr, pomdp, real_policy, belief_updater, ib, is)
+        try
+            hist = simulate(hr, pomdp, real_policy, belief_updater, ib, is)
         
-        (last_reward, path_len) = render_history("$(label)-$(i)", room, hist)
-        data_file = "output/$(folder)/data.txt"
-        if !isfile(data_file) 
-            open(data_file, "a") do f
-                write(f, "index,x,y,theta,discounted_reward, last_reward, path_len\n")
+            (last_reward, path_len) = render_history("$(label)-$(i)", room, hist)
+            data_file = "output/$(folder)/$(label)-data.txt"
+            if !isfile(data_file) 
+                open(data_file, "a") do f
+                    write(f, "index,x,y,theta,discounted_reward, last_reward, path_len\n")
+                end
             end
+            data = @sprintf("%d,%.3f, %.3f, %.3f, %.3f, %3f, %d\n", i,is.x, is.y, is.theta, discounted_reward(hist), last_reward, path_len)
+            open(data_file, "a") do f
+                write(f,data)
+            end
+            print(data)
+        catch y
+            if isa(y, InterruptException)
+                return
+            end
+            @show i, is, y
         end
-        data = @sprintf("%d,%.3f, %.3f, %.3f, %.3f, %3f, %d\n", i,is.x, is.y, is.theta, discounted_reward(hist), last_reward, path_len)
-        open(data_file, "a") do f
-            write(f,data)
-        end
-        print(data)
     end
     
 end
 
-function main(room_config) 
+function main(room_config, skip) 
     pomdp = init(room_config)
     println("solving")
     policy = do_solve(pomdp)
-    compare("config-$(room_config)", pomdp, policy)
+    compare("config-$(room_config)", pomdp, policy, skip)
     println("not generating output, uncomment following line if interested")
     # generate_output(pomdp, policy, belief_updater, @sprintf("pomcpow-%d", room_config))
 end
