@@ -14,11 +14,13 @@ using Printf
 include("output.jl")
 include("src/evaluate.jl")
 
-function init(room_config)
+function init(room_config, reward)
     sensor = Bumper() 
 
 
-    pomdp = RoombaPOMDP(sensor=sensor, mdp=RoombaMDP(config=room_config));
+    mdp = RoombaMDP(config=room_config)
+    mdp.goal_reward = reward
+    pomdp = RoombaPOMDP(sensor=sensor, mdp=mdp);
 
     return pomdp
 end
@@ -52,12 +54,12 @@ function compare(label::String, pomdp::RoombaPOMDP, real_policy, skip::Int)
     ny = 10
     nth = 4
     states = evaluation_states(pomdp, nx, ny, nth)
-    folder = "compare-$(nx)-$(ny)-$(nth)"
+    folder = "compare-$(nx)-$(ny)-$(nth)-$(label)"
     # rm("output/$(folder)"; force = true, recursive = true)
     if !isdir("output/$(folder)")
         mkdir("output/$(folder)")
     end
-    label = "$(folder)/$(label)"
+    full_label = "$(folder)/out"
     room = mdp(pomdp).room
 
     #random_hr = HistoryRecorder(max_steps=600)
@@ -78,11 +80,11 @@ function compare(label::String, pomdp::RoombaPOMDP, real_policy, skip::Int)
         try
             hist = simulate(hr, pomdp, real_policy, belief_updater, ib, is)
         
-            (last_reward, path_len) = render_history("$(label)-$(i)", room, hist)
-            data_file = "output/$(folder)/$(label)-data.txt"
+            (last_reward, path_len) = render_history("$(full_label)-$(i)", room, hist)
+            data_file = "output/$(folder)/data.txt"
             if !isfile(data_file) 
                 open(data_file, "a") do f
-                    write(f, "index,x,y,theta,discounted_reward, last_reward, path_len\n")
+                    write(f, "index,x,y,theta,discounted_reward,last_reward,path_len\n")
                 end
             end
             data = @sprintf("%d,%.3f, %.3f, %.3f, %.3f, %3f, %d\n", i,is.x, is.y, is.theta, discounted_reward(hist), last_reward, path_len)
@@ -101,10 +103,11 @@ function compare(label::String, pomdp::RoombaPOMDP, real_policy, skip::Int)
 end
 
 function main(room_config, skip) 
-    pomdp = init(room_config)
+    reward = 100
+    pomdp = init(room_config,reward)
     println("solving")
     policy = do_solve(pomdp)
-    compare("config-$(room_config)", pomdp, policy, skip)
+    compare("config-$(room_config)-reward-$(reward)", pomdp, policy, skip)
     println("not generating output, uncomment following line if interested")
     # generate_output(pomdp, policy, belief_updater, @sprintf("pomcpow-%d", room_config))
 end

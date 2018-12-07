@@ -1,4 +1,4 @@
-index,x,y,theta,discounted_reward, last_reward, path_len
+index,x,y,theta,discounted_reward,last_reward,path_len
 1,-20.600, -17.100, 0.000, -1.154, 8.900000, 43
 2,-20.600, -17.100, 1.571, -1.223, 8.900000, 43
 3,-20.600, -17.100, 3.142, -3.513, 8.900000, 169
