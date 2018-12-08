@@ -6,23 +6,23 @@ using CSV
 using Statistics
 using Printf
 
-runs = if size(ARGS,1) == 0 
-    [
-    "output/compare-15-10-4/data.txt", 
-    "output/compare-15-10-4-config-2-reward-100/data.txt"
-    ]
-else
-    ARGS
+function stats(runs)
+     @printf("adr,exit-per,exit-adr,stairs-per,stairs-adr,filename\n") 
+    for filename in runs
+        d = CSV.read(filename)
+        total = size(d,1)
+        falling = d[d[:last_reward].<=-10,:]
+        exiting = d[d[:last_reward].>5,:]
+
+        @printf("%.3f & %.1f & %.3f & %.1f & %.3f & %s\n", 
+            mean(d[:discounted_reward]),
+            100.0*size(exiting,1)/total, mean(exiting[:discounted_reward]),
+            100.0*size(falling,1)/total, mean(falling[:discounted_reward]),
+            filename
+            )
+    end
 end
 
-for filename in runs
-    d = CSV.read(filename)
-    total = size(d,1)
-    falling = d[d[:last_reward].<=-10,:]
-    exiting = d[d[:last_reward].>5,:]
-
-    @printf("stairs %.1f %.3f, exit %.3f %f,\n", 
-        100.0*size(falling,1)/total, mean(falling[:discounted_reward]),
-        100.0*size(exiting,1)/total, mean(exiting[:discounted_reward])
-        )
+ if size(ARGS,1) > 0 
+    stats(ARGS)
 end
