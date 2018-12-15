@@ -1,3 +1,5 @@
+# This file codes a manual policy. It is not performing very well.
+
 using Pkg; Pkg.activate(".")
 
 # import necessary packages
